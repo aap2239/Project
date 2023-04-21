@@ -4,6 +4,7 @@ import yfinance as yf
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import time
 
 # Function to fetch historical stock data
 def get_stock_data(ticker, start_date, end_date):
@@ -64,10 +65,15 @@ def create_radar_chart(tweet):
 
     return fig
 
-# Display tweets with radar charts and scroll functionality
-tweets_to_show = st.slider("Number of tweets to display", min_value=1, max_value=len(filtered_tweets), value=10)
+# Display one tweet at a time with a sleep timer of 5 seconds
+tweet_container = st.empty()
+chart_container = st.empty()
 
-for index, tweet in filtered_tweets.tail(tweets_to_show).iterrows():
-    st.write(f"{tweet['Date']} - {tweet['Tweet']}")
-    radar_chart = create_radar_chart(tweet)
-    st.plotly_chart(radar_chart)
+while True:
+    for index, tweet in filtered_tweets.iterrows():
+        tweet_container.write(f"{tweet['Date']} - {tweet['Tweet']}")
+        radar_chart = create_radar_chart(tweet)
+        chart_container.plotly_chart(radar_chart)
+        time.sleep(5)
+        tweet_container.empty()
+        chart_container.empty()
