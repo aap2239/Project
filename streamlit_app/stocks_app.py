@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 
 # Function to fetch historical stock data
@@ -13,9 +14,6 @@ def get_stock_data(ticker, start_date, end_date):
 def load_tweets(csv_file):
     return pd.read_csv(csv_file)
 
-tweets_csv = "/home/aishpats/Documents/Columbia_MS_EE/Spring_2023/Large_Scale_Stream_Processing/Project/data/datafiles_twdata (2).csv"
-tweets_df = load_tweets(tweets_csv)
-print(tweets_df)
 # Sidebar
 st.sidebar.title("Select a Company")
 company = st.sidebar.selectbox("Choose a company", ("Apple", "Google", "Microsoft"))
@@ -38,11 +36,38 @@ st.plotly_chart(fig)
 
 # Load and display live tweets
 st.header("Live Tweets")
-
+tweets_csv = "data/datafiles_twdata (2).csv"
+tweets_df = load_tweets(tweets_csv)
 
 # Filter tweets for the selected company
 filtered_tweets = tweets_df[tweets_df["Stocks"] == company]
 
-# Display the latest 10 tweets
-for index, tweet in filtered_tweets.tail(10).iterrows():
-    st.write(f"{tweet['Date']} : {tweet['Tweet']}")
+# Function to create radar chart for sentiment scores
+def create_radar_chart(tweet):
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatterpolar(
+        r=[tweet["Negative"], tweet["Neutral"], tweet["Positive"]],
+        theta=["Negative", "Neutral", "Positive"],
+        fill="toself",
+        name="Sentiment",
+    ))
+
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 1]
+            )),
+        showlegend=False
+    )
+
+    return fig
+
+# Display tweets with radar charts and scroll functionality
+tweets_to_show = st.slider("Number of tweets to display", min_value=1, max_value=len(filtered_tweets), value=10)
+
+for index, tweet in filtered_tweets.tail(tweets_to_show).iterrows():
+    st.write(f"{tweet['Date']} - {tweet['Tweet']}")
+    radar_chart = create_radar_chart(tweet)
+    st.plotly_chart(radar_chart)
